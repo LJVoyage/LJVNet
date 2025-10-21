@@ -1,0 +1,25 @@
+{
+  "name": "com.ljvoyage.network",
+  "version": "1.0.0",
+  "displayName": "LJVoyage Network",
+  "description": "A lightweight Unity networking toolkit providing API request management, interceptors, and editor-based configuration.",
+  "unity": "2022.3",
+  "keywords": [
+    "network",
+    "http",
+    "api",
+    "unity",
+    "ljvoyage",
+    "request"
+  ],
+  "category": "Networking",
+  "hideInEditor": false,
+  "author": {
+    "name": "LJVoyage",
+    "url": "https://github.com/LJVoyage"
+  },
+  "dependencies": {
+    "com.ljvoyage.toolkit": "https://github.com/LJVoyage/LJVToolkit.git"
+  },
+  "license": "MIT"
+}
