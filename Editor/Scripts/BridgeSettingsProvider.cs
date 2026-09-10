@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using VoyageForge.Bridge.Runtime;
-using VoyageForge.Depot.Editor.Scripts.Utilities;
+using VoyageForge.Depot.Editor.Utilities;
 
 namespace VoyageForge.Bridge.Editor
 {
@@ -89,7 +88,7 @@ namespace VoyageForge.Bridge.Editor
         {
             rootElement.Clear();
 
-            var vt = UxmlAssetUtility.LoadVisualTreeAsset(UxmlPath);
+            var vt = UxmlUtility.LoadVisualTreeAsset(UxmlPath);
             if (vt == null) { rootElement.Add(new Label("UXML 加载失败")); return; }
             vt.CloneTree(rootElement);
 
@@ -185,7 +184,7 @@ namespace VoyageForge.Bridge.Editor
                             config.EnvironmentKey = key;
                         SaveConfig(config);
                     }
-                    if (input != null) input.value = string.Empty;
+                    input.value = string.Empty;
                     BuildUi(rootElement);
                 };
             }
@@ -256,7 +255,7 @@ namespace VoyageForge.Bridge.Editor
             }
             else
             {
-                int globalBase = config.Endpoints.FindIndex(e =>
+                _ = config.Endpoints.FindIndex(e =>
                     e != null && string.Equals(e.EnvironmentKey, envKey, StringComparison.OrdinalIgnoreCase));
                 for (int i = 0; i < eps.Count; i++)
                     card.Add(BuildEpRow(config, envKey, i, eps[i], rootElement));

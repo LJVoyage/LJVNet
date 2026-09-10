@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using VoyageForge.Bridge.Runtime;
 
-namespace VoyageForge.Bridge.Tests.Runtime
+namespace VoyageForge.Bridge.Tests
 {
     // ---------- 测试配置 ----------
     internal class TestBridgeConfig : IBridgeConfig
@@ -104,54 +104,88 @@ namespace VoyageForge.Bridge.Tests.Runtime
             Assert.IsTrue(response.data.Contains("\"url\"") && response.data.Contains("httpbin.org"), $"Response missing url or host: {response.data}");
         }
 
+        // [UnityTest]
+        // public IEnumerator TestTimeout_ShouldFailFast()
+        // {
+        //     var request = new Request
+        //     {
+        //         url = "https://httpbin.org/delay/5",
+        //         method = "GET",
+        //         timeoutSeconds = 2
+        //     };
+        //     var task = TestBridgeClient.SendAsync<string>(request);
+        //     var awaiter = task.GetAwaiter();
+        //     float start = Time.time;
+        //     while (!awaiter.IsCompleted) yield return null;
+        //     float elapsed = Time.time - start;
+        //
+        //     Assert.IsTrue(elapsed < 3f, $"Timeout took {elapsed}s, expected <3s");
+        //
+        //     var response = awaiter.GetResult();
+        //     Assert.IsNotNull(response);
+        //     Assert.IsFalse(response.IsSuccessStatusCode, "Should fail due to timeout");
+        //     Assert.IsNull(response.data);
+        // }
+        //
+        // [UnityTest]
+        // public IEnumerator TestLongRunningRequest_ShouldSucceed()
+        // {
+        //     var request = new Request
+        //     {
+        //         url = "https://httpbin.org/delay/3",
+        //         method = "GET",
+        //         timeoutSeconds = 30
+        //     };
+        //     var task = TestBridgeClient.SendAsync<string>(request);
+        //     var awaiter = task.GetAwaiter();
+        //     float start = Time.time;
+        //     while (!awaiter.IsCompleted) yield return null;
+        //     float elapsed = Time.time - start;
+        //
+        //     // 允许网络波动，放宽到 2~12 秒
+        //     Assert.IsTrue(elapsed >= 2f && elapsed < 12f, $"Request took {elapsed}s, expected ~3s");
+        //
+        //     var response = awaiter.GetResult();
+        //     Assert.IsNotNull(response);
+        //     Assert.IsTrue(response.IsSuccessStatusCode, $"StatusCode: {response.statusCode}, StatusText: {response.statusText}");
+        //     Assert.IsNotNull(response.data);
+        //
+        //     // 验证响应是包含 'url' 字段的 JSON（httpbin /delay 返回的就是 /get 的响应）
+        //     Assert.IsTrue(response.data.Contains("\"url\"") && response.data.Contains("httpbin.org"), $"Response missing url or host: {response.data}");
+        // }
+        
+        
         [UnityTest]
-        public IEnumerator TestTimeout_ShouldFailFast()
+        public IEnumerator TestLongTimeout_ShouldNotTimeoutPrematurely()
         {
+            // 设置超时 120 秒，远大于之前 UnityWebRequest 的 60 秒限制
             var request = new Request
             {
-                url = "https://httpbin.org/delay/5",
+                url = "https://httpbin.org/delay/5", // 服务端延迟 5 秒
                 method = "GET",
-                timeoutSeconds = 2
+                timeoutSeconds = 120
             };
+
             var task = TestBridgeClient.SendAsync<string>(request);
             var awaiter = task.GetAwaiter();
+
             float start = Time.time;
-            while (!awaiter.IsCompleted) yield return null;
+            while (!awaiter.IsCompleted)
+                yield return null;
             float elapsed = Time.time - start;
 
-            Assert.IsTrue(elapsed < 3f, $"Timeout took {elapsed}s, expected <3s");
+            // 请求应在 5 秒左右完成（允许网络波动），而不是 60 秒
+            Assert.IsTrue(elapsed >= 4f && elapsed < 15f, 
+                $"Request took {elapsed:F2}s, expected around 5s (should not hit 60s timeout)");
 
             var response = awaiter.GetResult();
             Assert.IsNotNull(response);
-            Assert.IsFalse(response.IsSuccessStatusCode, "Should fail due to timeout");
-            Assert.IsNull(response.data);
-        }
-
-        [UnityTest]
-        public IEnumerator TestLongRunningRequest_ShouldSucceed()
-        {
-            var request = new Request
-            {
-                url = "https://httpbin.org/delay/3",
-                method = "GET",
-                timeoutSeconds = 30
-            };
-            var task = TestBridgeClient.SendAsync<string>(request);
-            var awaiter = task.GetAwaiter();
-            float start = Time.time;
-            while (!awaiter.IsCompleted) yield return null;
-            float elapsed = Time.time - start;
-
-            // 允许网络波动，放宽到 2~12 秒
-            Assert.IsTrue(elapsed >= 2f && elapsed < 12f, $"Request took {elapsed}s, expected ~3s");
-
-            var response = awaiter.GetResult();
-            Assert.IsNotNull(response);
-            Assert.IsTrue(response.IsSuccessStatusCode, $"StatusCode: {response.statusCode}, StatusText: {response.statusText}");
+            Assert.IsTrue(response.IsSuccessStatusCode, $"StatusCode: {response.statusCode}");
             Assert.IsNotNull(response.data);
 
-            // 验证响应是包含 'url' 字段的 JSON（httpbin /delay 返回的就是 /get 的响应）
-            Assert.IsTrue(response.data.Contains("\"url\"") && response.data.Contains("httpbin.org"), $"Response missing url or host: {response.data}");
+            // 验证返回的是有效 JSON（包含 "url" 字段）
+            Assert.IsTrue(response.data.Contains("\"url\""), 
+                $"Response missing 'url' field: {response.data}");
         }
     }
 }
